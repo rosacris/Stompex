@@ -9,7 +9,8 @@ defmodule Stompex do
 
   @doc false
   def connect(_info, %{ sock: nil, host: host, port: port, timeout: timeout } = state) do
-    case :gen_tcp.connect(to_char_list(host), port, @tcp_opts, timeout) do
+    TCPWrapper.start()
+    case TCPWrapper.connect(to_char_list(host), port, @tcp_opts, timeout) do
       { :ok, sock } ->
         stomp_connect(sock, state)
 
@@ -28,9 +29,9 @@ defmodule Stompex do
     Connection.reply(from, :ok)
     GenServer.stop(receiver)
 
-    case :gen_tcp.send(sock, frame) do
+    case TCPWrapper.send(sock, frame) do
       :ok ->
-        :gen_tcp.close(sock)
+        TCPWrapper.close(sock)
         { :reply, :ok, %{ state | sock: nil, receiver: nil } }
 
       { :error, _ } = error ->
@@ -49,7 +50,7 @@ defmodule Stompex do
       |> put_headers(state[:headers])
       |> finish_frame()
 
-    with :ok <- :gen_tcp.send(conn, frame),
+    with :ok <- TCPWrapper.send(conn, frame),
          { :ok, receiver } <- Stompex.Receiver.start_link(conn),
           { :ok, frame } <- Stompex.Receiver.receive_frame(receiver)
     do
@@ -156,7 +157,7 @@ defmodule Stompex do
       |> set_body(message)
       |> finish_frame()
 
-    response = :gen_tcp.send(sock, frame)
+    response = TCPWrapper.send(sock, frame)
     { :reply, response, state }
   end
 
@@ -171,7 +172,7 @@ defmodule Stompex do
       |> put_header("subscription", frame.headers["subscription"])
       |> finish_frame()
 
-    :gen_tcp.send(sock, frame)
+    TCPWrapper.send(sock, frame)
 
     { :noreply, state }
   end
@@ -188,7 +189,7 @@ defmodule Stompex do
       |> put_header("subscription", frame.headers["subscription"])
       |> finish_frame()
 
-    :gen_tcp.send(sock, frame)
+    TCPWrapper.send(sock, frame)
     { :noreply, state }
   end
 
@@ -242,7 +243,7 @@ defmodule Stompex do
 
     state = %{ state | subscription_id: (id + 1) }
 
-    case :gen_tcp.send(sock, finish_frame(frame)) do
+    case TCPWrapper.send(sock, finish_frame(frame)) do
       :ok ->
         # Great we've subscribed. Now keep track of it
         subscription = %{
@@ -267,7 +268,7 @@ defmodule Stompex do
       |> put_header("id", subscription[:id])
       |> finish_frame()
 
-    case :gen_tcp.send(sock, frame) do
+    case TCPWrapper.send(sock, frame) do
       :ok ->
         { :noreply, %{ state | subscriptions: Map.delete(subscriptions, destination)}}
 

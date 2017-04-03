@@ -2,6 +2,7 @@
 
 # Stompex
 
+This is a forked Stompex library that adds support for SSL connections with the broker. I will try to get it merged with the original Stompex project in the near future.
 Stompex is a library to allow you to connect to STOMP based servers. It is a work
 in progress, so please expect any future changes to be breaking until v1.0 is release.
 

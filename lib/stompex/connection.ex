@@ -17,7 +17,7 @@ defmodule Stompex.Connection do
     conn
     |> set_delimeter(delim)
     |> set_packet_type(:line)
-    |> :gen_tcp.recv(0)
+    |> TCPWrapper.recv(0)
   end
 
   @doc """
@@ -56,14 +56,14 @@ defmodule Stompex.Connection do
   def read_bytes(conn, length) do
     conn
     |> set_packet_type(:raw)
-    |> :gen_tcp.recv(length)
+    |> TCPWrapper.recv(length)
   end
 
 
   # Sets the line delimeter of the specified
   # connection.
   defp set_delimeter(conn, delim) do
-    :inet.setopts(conn, line_delimeter: delim)
+    TCPWrapper.setopts(conn, line_delimeter: delim)
     conn
   end
 
@@ -71,7 +71,7 @@ defmodule Stompex.Connection do
   # between reading lines at a time, to reading
   # a specific number of bytes
   defp set_packet_type(conn, type) do
-    :inet.setopts(conn, packet: type)
+    TCPWrapper.setopts(conn, packet: type)
     conn
   end
 
